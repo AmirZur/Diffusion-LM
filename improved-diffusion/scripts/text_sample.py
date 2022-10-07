@@ -173,7 +173,11 @@ def main():
 
     arr = np.concatenate(all_images, axis=0)
     print(arr.shape, 'full shape')
-    arr = arr[: args.num_samples * args.mbr_sample]
+    #########################################################
+    # NOTE TO AMIR: commenting out line below so that we can 
+    # decode multiple samples
+    # arr = arr[: args.num_samples * args.mbr_sample]
+    #########################################################
 
     if diffusion.training_mode.startswith('e2e'):
         word_lst_e2e = []

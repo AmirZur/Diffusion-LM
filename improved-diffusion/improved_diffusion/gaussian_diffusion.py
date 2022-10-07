@@ -729,6 +729,10 @@ class GaussianDiffusion:
         :return: a non-differentiable batch of samples.
         """
         final = None
+        ######
+        samples = []
+        i = 0
+        ######
         for sample in self.p_sample_loop_progressive(
             model,
             shape,
@@ -740,7 +744,12 @@ class GaussianDiffusion:
             progress=progress,
             top_p=top_p,
         ):
+            ########## NOTE TO AMIR: TO SEE THE REST OF THE TEXT, JUST SAVE/PRINT IT HERE ###########
+            if i % 200 == 0:
+                samples.append(sample['sample'])
+            i += 1
             final = sample
+            #########################################################################################
         return final["sample"]
 
     def p_sample_loop_progressive(
