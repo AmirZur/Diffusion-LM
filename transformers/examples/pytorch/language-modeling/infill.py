@@ -340,6 +340,10 @@ def main():
                           'r') as controlf:
                     for line in controlf:
                         control_label_lst.append(json.loads(line))
+                ###################### NOTE TO AMIR: Cutting down number of examples ################
+                control_label_lst = control_label_lst[:101]
+                #####################################################################################
+
                 # print(control_label_lst[:1])
                 control_constraints = []
                 for label_class_dict in control_label_lst[100:]:
@@ -507,7 +511,7 @@ def main():
                     ):
                         #################### NOTE TO AMIR: FOR CLASSIFIER-GUIDED SAMPLING, PRINT HERE!! ###########
                         print(i)
-                        if i % 200 == 0:
+                        if i % 20 == 0:
                             print('Amir says we are collecting a sample!')
                             samples.append(sample["sample"])
                         i += 1
@@ -626,6 +630,7 @@ def main():
     
                 ########################################
                 sample = final
+                # stack intermediate samples together
                 sample = th.concat(samples, dim=0)
                 ########################################
     
@@ -700,11 +705,22 @@ def main():
     if args.verbose == 'pipe':
         print(f'sampled for {len(sample_dict)} control tasks')
         out_path_pipe = os.path.join(args.out_dir, f"{model_base_name}.infill_{args.eval_task_}_{args.notes}.json")
-        fout = open(out_path_pipe, 'w')
+        # this approach ends up writing quotes without escpaing them
+        # why not use the builtin json function?
+        # fout = open(out_path_pipe, 'w')
         result_dict = decode_helper(args, sample_dict, diff_model=model)
-        for k, word_lst in result_dict.items():
-            print({k:word_lst}, file=fout)
-        fout.close()
+        # for k, word_lst in result_dict.items():
+        #     print({k:word_lst}, file=fout)
+        # fout.close()
+        # convert keys to str so that we can write result to a file
+        result_dict_printout = {str(k): v for k, v in result_dict.items()}
+        with open(out_path_pipe, 'w') as fout:
+            json.dump(result_dict_printout, fout)
+        # also try to write out actual word tensors, for investigation!
+        sample_dict_printout = {str(k): v.tolist() for k, v in sample_dict.items()}
+        sample_dict_out_path = os.path.join(args.out_dir, f"{model_base_name}.infill_{args.eval_task_}_{args.notes}_tensors.json")
+        with open(sample_dict_out_path, 'w') as fout:
+            json.dump(sample_dict_printout, fout)
         print(f'written the decoded output to {out_path_pipe}')
         out_path2 = out_path_pipe
 
