@@ -39,6 +39,10 @@ def main():
     with open(config_path, 'rb', ) as f:
         training_args = json.load(f)
     args.__dict__.update(training_args)
+    
+    ###### AMIR: setting batch size to 1 here, because training args override it #########
+    args.batch_size = 1
+    ###################################################################################### 
 
     args.noise_level = 0.0
     args.sigma_small = True
