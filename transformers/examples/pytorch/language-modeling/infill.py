@@ -140,6 +140,7 @@ def main():
             # right_pad = th.empty(args.tgt_len+2).fill_(pad_token).long()
             # TO FIX... IMPORTANT.
             if 'length' not in args.eval_task_:
+                # used to fill with "64", but replaced with image_size argument (default is also 64)
                 right_pad = th.empty(64).fill_(pad_token).long()
                 encoded_partial_seq = [th.cat([right_pad], dim=0)]
                 encoded_partial_seq[0][0] = tokens2id['START']
@@ -511,7 +512,8 @@ def main():
                     ):
                         #################### NOTE TO AMIR: FOR CLASSIFIER-GUIDED SAMPLING, PRINT HERE!! ###########
                         print(i)
-                        if i % 20 == 0:
+                        # collect every interval steps, and always collect the first (uninitialized) sample
+                        if i % args.interval == 0 or i == 1:
                             print('Amir says we are collecting a sample!')
                             samples.append(sample["sample"])
                         i += 1
@@ -717,10 +719,11 @@ def main():
         with open(out_path_pipe, 'w') as fout:
             json.dump(result_dict_printout, fout)
         # also try to write out actual word tensors, for investigation!
-        sample_dict_printout = {str(k): v.tolist() for k, v in sample_dict.items()}
-        sample_dict_out_path = os.path.join(args.out_dir, f"{model_base_name}.infill_{args.eval_task_}_{args.notes}_tensors.json")
-        with open(sample_dict_out_path, 'w') as fout:
-            json.dump(sample_dict_printout, fout)
+        sample_dict_printout = {str(k): th.tensor(v) for k, v in sample_dict.items()}
+        sample_dict_out_path = os.path.join(args.out_dir, f"{model_base_name}.infill_{args.eval_task_}_{args.notes}_tensors.pt")
+        # with open(sample_dict_out_path, 'w') as fout:
+        #     json.dump(sample_dict_printout, fout)
+        th.save(sample_dict_printout, sample_dict_out_path)
         print(f'written the decoded output to {out_path_pipe}')
         out_path2 = out_path_pipe
 
@@ -778,8 +781,8 @@ def create_argparser():
         emb_scale_factor=1.0, split='train', debug_path='', eval_task_='infill',
         partial_seq="", partial_seq_file="", verbose='yes', tgt_len=15, t_merge=200, interp_coef=0.5, notes='',
         start_idx=0, end_idx=0,
-        ##### NOTE TO AMIR: Added classifier path argument #######
-        classifier_path=''
+        ##### NOTE TO AMIR: Added arguments (path to classifier, and interval at which to sample) #######
+        classifier_path='', interval=10
         ##########################################################
     )
     defaults.update(model_and_diffusion_defaults())

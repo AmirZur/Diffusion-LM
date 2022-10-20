@@ -1153,7 +1153,9 @@ class GaussianDiffusion:
             from tqdm.auto import tqdm
 
             indices = tqdm(indices)
-
+        ############## AMIR: Outputting random initialization at first iteration ############
+        yield {'sample': img}
+        #####################################################################################
         for i in indices:
             t = th.tensor([i] * shape[0], device=device)
             with th.no_grad():
