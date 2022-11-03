@@ -496,6 +496,9 @@ def main():
                     #######################
                     i = 1
                     samples = []
+                    samples_pre_noise = []
+                    clamped = []
+                    originals = []
                     #######################
                     for sample in loop_func_(
                             ########################### NOTE TO AMIR: Changing GPU to CPU #######################
@@ -520,6 +523,9 @@ def main():
                         if i % args.interval == 0 or i == 1:
                             print('Amir says we are collecting a sample!')
                             samples.append(sample["sample"])
+                            samples_pre_noise.append(sample['sample_pre_noise'])
+                            clamped.append(sample['clamped'])
+                            originals.append(sample['original'])
                         i += 1
                         final = sample["sample"]
                         ###########################################################################################
@@ -638,6 +644,9 @@ def main():
                 sample = final
                 # stack intermediate samples together
                 sample = th.concat(samples, dim=0)
+                sample_pre_noise = th.concat(samples_pre_noise, dim=0)
+                clamped = th.concat(clamped, dim=0)
+                original = th.concat(originals, dim=0)
                 ########################################
     
     
@@ -728,6 +737,16 @@ def main():
         # with open(sample_dict_out_path, 'w') as fout:
         #     json.dump(sample_dict_printout, fout)
         th.save(sample_dict_printout, sample_dict_out_path)
+
+        sample_pre_noise_path = os.path.join(args.out_dir, f"{model_base_name}.infill_{args.eval_task_}_{args.notes}_pre_noise.pt")
+        th.save(sample_pre_noise, sample_pre_noise_path)
+
+        clamped_path = os.path.join(args.out_dir, f"{model_base_name}.infill_{args.eval_task_}_{args.notes}_clamped.pt")
+        th.save(clamped, clamped_path)
+
+        original_path = os.path.join(args.out_dir, f"{model_base_name}.infill_{args.eval_task_}_{args.notes}_original.pt")
+        th.save(original, original_path)
+
         print(f'written the decoded output to {out_path_pipe}')
         out_path2 = out_path_pipe
 

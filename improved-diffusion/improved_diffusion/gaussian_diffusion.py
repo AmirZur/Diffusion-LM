@@ -520,6 +520,7 @@ class GaussianDiffusion:
         def process_xstart(x):
             if denoised_fn is not None:
                 # print(denoised_fn)
+                print('Amir thinks that we are rounding at this step!')
                 x = denoised_fn(x, t)
             if clip_denoised:
                 return x.clamp(-1, 1)
@@ -531,7 +532,9 @@ class GaussianDiffusion:
             )
             model_mean = model_output
         elif self.model_mean_type in [ModelMeanType.START_X, ModelMeanType.EPSILON]:
+            print('Output shape:', model_output.shape)
             if self.model_mean_type == ModelMeanType.START_X:
+                print('Are we here?')
                 pred_xstart = process_xstart(model_output)
             else:
                 pred_xstart = process_xstart(
@@ -546,11 +549,15 @@ class GaussianDiffusion:
         assert (
             model_mean.shape == model_log_variance.shape == pred_xstart.shape == x.shape
         )
+        print('Sample shape:', model_mean.shape)
         return {
             "mean": model_mean,
             "variance": model_variance,
             "log_variance": model_log_variance,
             "pred_xstart": pred_xstart,
+            ###################### AMIR: ALSO RETURNING ORIGINAL MODEL OUTPUT ####################
+            "original": model_output
+            ######################################################################################
         }
 
     def _predict_xstart_from_eps(self, x_t, t, eps):
@@ -1045,7 +1052,15 @@ class GaussianDiffusion:
         if langevin_fn:
             print(t.shape)
             sample=langevin_fn(sample, mean_pred, sigma, self.alphas_cumprod_prev[t[0]], t, x)
-        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
+        return {
+            "sample": sample, 
+            "pred_xstart": out["pred_xstart"],
+            ########################## AMIR: ALSO RETURNING INTERMEDIATE OUTPUTS ####################
+            "sample_pre_noise": mean_pred,
+            "clamped": out["pred_xstart"],
+            "original": out["original"]
+            #########################################################################################
+        }
 
     def ddim_reverse_sample(
         self,
@@ -1154,7 +1169,7 @@ class GaussianDiffusion:
 
             indices = tqdm(indices)
         ############## AMIR: Outputting random initialization at first iteration ############
-        yield {'sample': img}
+        yield {'sample': img, 'sample_pre_noise': img, 'clamped': img, 'original': img}
         #####################################################################################
         for i in indices:
             t = th.tensor([i] * shape[0], device=device)
